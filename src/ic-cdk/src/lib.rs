@@ -36,7 +36,12 @@ pub fn setup() {
 
 /// Block on a promise in a WASM-friendly way (no multithreading!).
 pub fn block_on<F: 'static + std::future::Future<Output = ()>>(future: F) {
-    futures::block_on(future);
+    futures::block_on(future)
+}
+
+/// Block on a promise returning its output in a WASM-friendly way (no multithreading!).
+pub fn block_on_with_output<T, F: 'static + std::future::Future<Output = T>>(future: F) -> Option<T> {
+    futures::block_on_with_output(future)
 }
 
 /// Format and then print the formatted message

@@ -22,6 +22,23 @@ pub fn block_on<F: 'static + Future<Output = ()>>(future: F) {
     let future_ptr = Box::into_raw(Box::new(future));
     let future_ptr_ptr: *mut *mut dyn Future<Output = ()> = Box::into_raw(Box::new(future_ptr));
     let mut pinned_future = unsafe { Pin::new_unchecked(&mut *future_ptr) };
+    
+    // TODO messing with this crazy function!!! let's do it
+
+    // if let std::task::Poll::Ready(val) = pinned_future
+    //     .as_mut()
+    //     .poll(&mut Context::from_waker(&waker::waker(
+    //         future_ptr_ptr as *const (),
+    //     )))
+    // {
+    //     unsafe {
+    //         let _ = Box::from_raw(future_ptr);
+    //         let _ = Box::from_raw(future_ptr_ptr);
+    //     }
+
+    //     return val;
+    // }
+    
     if pinned_future
         .as_mut()
         .poll(&mut Context::from_waker(&waker::waker(
@@ -33,7 +50,85 @@ pub fn block_on<F: 'static + Future<Output = ()>>(future: F) {
             let _ = Box::from_raw(future_ptr);
             let _ = Box::from_raw(future_ptr_ptr);
         }
+
+        // crate::print("here i am 0");
+
+        // return "why heello".to_string();
     }
+
+    // crate::print("here i am 1");
+
+    // panic!("should never get here");
+}
+
+pub fn block_on_with_output<T, F: 'static + Future<Output = T>>(future: F) -> Option<T> {
+    crate::print("0");
+
+    let future_ptr = Box::into_raw(Box::new(future));
+    let future_ptr_ptr: *mut *mut dyn Future<Output = T> = Box::into_raw(Box::new(future_ptr));
+    let mut pinned_future = unsafe { Pin::new_unchecked(&mut *future_ptr) };
+    
+    // TODO messing with this crazy function!!! let's do it
+
+    match pinned_future
+        .as_mut()
+        .poll(&mut Context::from_waker(&waker::waker(
+            future_ptr_ptr as *const (),
+        )))
+    {
+        std::task::Poll::Ready(val) => {
+            crate::print("1");
+
+            unsafe {
+                let _ = Box::from_raw(future_ptr);
+                let _ = Box::from_raw(future_ptr_ptr);
+            }
+
+            Some(val)
+        },
+        _ => {
+            crate::print("2");
+
+            None
+        }
+    }
+
+    // if let std::task::Poll::Ready(val) = pinned_future
+    //     .as_mut()
+    //     .poll(&mut Context::from_waker(&waker::waker(
+    //         future_ptr_ptr as *const (),
+    //     )))
+    // {
+    //     unsafe {
+    //         let _ = Box::from_raw(future_ptr);
+    //         let _ = Box::from_raw(future_ptr_ptr);
+    //     }
+
+    //     crate::print("here i am 0");
+
+    //     return val;
+    // }
+    
+    // if pinned_future
+    //     .as_mut()
+    //     .poll(&mut Context::from_waker(&waker::waker(
+    //         future_ptr_ptr as *const (),
+    //     )))
+    //     .is_ready()
+    // {
+    //     unsafe {
+    //         let _ = Box::from_raw(future_ptr);
+    //         let _ = Box::from_raw(future_ptr_ptr);
+    //     }
+
+    //     crate::print("here i am 0");
+
+    //     // return "why heello".to_string();
+    // }
+
+    // crate::print("here i am 1");
+
+    // panic!("should never get here");
 }
 
 // This module contains the implementation of a waker we're using for waking
@@ -75,6 +170,8 @@ mod waker {
             Box::into_raw(boxed_future_ptr_ptr);
             Box::into_raw(boxed_future);
         }
+
+        crate::print("i am here now");
     }
 
     fn wake_by_ref(_: *const ()) {}
